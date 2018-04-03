@@ -70,6 +70,8 @@ parser.add_argument('--when', nargs="+", type=int, default=[-1],
 args = parser.parse_args()
 args.tied = True
 
+print(args)
+
 # Set the random seed manually for reproducibility.
 np.random.seed(args.seed)
 torch.manual_seed(args.seed)
