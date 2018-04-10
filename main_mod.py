@@ -106,8 +106,8 @@ else:
     torch.save(corpus, fn)
 
 #TODO
-eval_batch_size = args.batch_size
-test_batch_size = args.batch_size
+eval_batch_size = 10
+test_batch_size = 1
 train_data = batchifygpu(corpus.train, args.batch_size, args)
 val_data = batchifygpu(corpus.valid, eval_batch_size, args)
 test_data = batchifygpu(corpus.test, test_batch_size, args)
@@ -167,6 +167,10 @@ def evaluate(data_source, batch_size=10):
     total_loss = 0
     ntokens = len(corpus.dictionary)
     hidden = model.init_hidden(batch_size)
+    print("ntokens:")
+    print(ntokens)
+    print("hidden.shape:")
+    print(hidden.shape)
     for i in range(0, data_source.size(0) - 1, args.bptt):
         data, targets = get_batch(data_source, i, args, evaluation=True)
         output, hidden = model(data, hidden)
