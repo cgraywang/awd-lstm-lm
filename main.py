@@ -154,17 +154,31 @@ print('Model total parameters:', total_params)
 # Training code
 ###############################################################################
 
+flag_evaluate = True
+
 def evaluate(data_source, batch_size=10):
+    
+    global flag_evaluate
+    
     # Turn on evaluation mode which disables dropout.
     model.eval()
     if args.model == 'QRNN': model.reset()
     total_loss = 0
     ntokens = len(corpus.dictionary)
     hidden = model.init_hidden(batch_size)
+    
+    if flag_evaluate:
+        print("evaluate-hidden:")
+        print(hidden)
+    
     for i in range(0, data_source.size(0) - 1, args.bptt):
         data, targets = get_batch(data_source, i, args, evaluation=True)
-        print("hidden.shape:")
-        print(hidden.shape)
+        
+        if flag_evaluate:
+            print("evaluate-hidden-1:")
+            print(hidden)
+        flag_evaluate = False
+        
         output, hidden = model(data, hidden)
         total_loss += len(data) * criterion(model.decoder.weight, model.decoder.bias, output, targets).data
         hidden = repackage_hidden(hidden)
