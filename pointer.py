@@ -12,13 +12,13 @@ import model
 from utils import batchify, get_batch, repackage_hidden
 
 parser = argparse.ArgumentParser(description='PyTorch PennTreeBank RNN/LSTM Language Model')
-parser.add_argument('--data', type=str, default='data/penn',
+parser.add_argument('--data', type=str, default='data/wikitext-2',
                     help='location of the data corpus')
 parser.add_argument('--model', type=str, default='LSTM',
                     help='type of recurrent net (LSTM, QRNN)')
-parser.add_argument('--save', type=str,default='best.pt',
+parser.add_argument('--save', type=str,default='WT2.pt',
                     help='model to use the pointer over')
-parser.add_argument('--cuda', action='store_false',
+parser.add_argument('--cuda', action='store_true',
                     help='use CUDA')
 parser.add_argument('--bptt', type=int, default=5000,
                     help='sequence length')
@@ -112,24 +112,27 @@ def evaluate(data_source, batch_size=10, window=args.window):
         pointer_history = pointer_history[-window:]
     return total_loss / len(data_source)
 
-# Load the best saved model.
-with open(args.save, 'rb') as f:
-    if not args.cuda:
-        model = torch.load(f, map_location=lambda storage, loc: storage)
-    else:
-        model = torch.load(f)
-print(model)
+if __name__ == '__main__':
 
-# Run on val data.
-val_loss = evaluate(val_data, test_batch_size)
-print('=' * 89)
-print('| End of pointer | val loss {:5.2f} | val ppl {:8.2f}'.format(
-    val_loss, math.exp(val_loss)))
-print('=' * 89)
+    # Load the best saved model.
+    with open(args.save, 'rb') as f:
+        if not args.cuda:
+            model = torch.load(f, map_location=lambda storage, loc: storage)
+        else:
+            model = torch.load(f)
+        model = model[0]
+    print(model)
 
-# Run on test data.
-test_loss = evaluate(test_data, test_batch_size)
-print('=' * 89)
-print('| End of pointer | test loss {:5.2f} | test ppl {:8.2f}'.format(
-    test_loss, math.exp(test_loss)))
-print('=' * 89)
+    # Run on val data.
+    val_loss = evaluate(val_data, test_batch_size)
+    print('=' * 89)
+    print('| End of pointer | val loss {:5.2f} | val ppl {:8.2f}'.format(
+        val_loss, math.exp(val_loss)))
+    print('=' * 89)
+
+    # Run on test data.
+    test_loss = evaluate(test_data, test_batch_size)
+    print('=' * 89)
+    print('| End of pointer | test loss {:5.2f} | test ppl {:8.2f}'.format(
+        test_loss, math.exp(test_loss)))
+    print('=' * 89)
