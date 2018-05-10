@@ -12,21 +12,21 @@ import model
 from utils import batchify, get_batch, repackage_hidden
 
 parser = argparse.ArgumentParser(description='PyTorch PennTreeBank RNN/LSTM Language Model')
-parser.add_argument('--data', type=str, default='data/penn',
+parser.add_argument('--data', type=str, default='data/wikitext-2',
                     help='location of the data corpus')
 parser.add_argument('--model', type=str, default='LSTM',
                     help='type of recurrent net (LSTM, QRNN)')
-parser.add_argument('--save', type=str,default='best.pt',
+parser.add_argument('--save', type=str,default='WT2.pt',
                     help='model to use the pointer over')
-parser.add_argument('--cuda', action='store_false',
+parser.add_argument('--cuda', action='store_true',
                     help='use CUDA')
-parser.add_argument('--bptt', type=int, default=5000,
+parser.add_argument('--bptt', type=int, default=2000,
                     help='sequence length')
 parser.add_argument('--window', type=int, default=3785,
                     help='pointer window length')
-parser.add_argument('--theta', type=float, default=0.6625523432485668,
+parser.add_argument('--theta', type=float, default=0.662,
                     help='mix between uniform distribution and pointer softmax distribution over previous words')
-parser.add_argument('--lambdasm', type=float, default=0.12785920428335693,
+parser.add_argument('--lambdasm', type=float, default=0.1279,
                     help='linear mix between only pointer (1) and only vocab (0) distribution')
 args = parser.parse_args()
 
@@ -118,6 +118,7 @@ with open(args.save, 'rb') as f:
         model = torch.load(f, map_location=lambda storage, loc: storage)
     else:
         model = torch.load(f)
+    model = model[0]
 print(model)
 
 # Run on val data.
