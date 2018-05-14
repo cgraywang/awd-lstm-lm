@@ -49,7 +49,7 @@ test_data = batchify(corpus.test, test_batch_size, args)
 ntokens = len(corpus.dictionary)
 criterion = nn.CrossEntropyLoss()
 
-def one_hot(idx, size, cuda=True):
+def one_hot(idx, size, cuda=False):
     a = np.zeros((1, size), np.float32)
     a[0][idx] = 1
     v = Variable(torch.from_numpy(a))
@@ -75,9 +75,9 @@ def evaluate(data_source, batch_size=10, window=args.window):
         # Fill pointer history
         start_idx = len(next_word_history) if next_word_history is not None else 0
         next_word_history = torch.cat([one_hot(t.data[0], ntokens) for t in targets]) if next_word_history is None else torch.cat([next_word_history, torch.cat([one_hot(t.data[0], ntokens) for t in targets])])
-        #print(next_word_history)
+        print(next_word_history)
         pointer_history = Variable(rnn_out.data) if pointer_history is None else torch.cat([pointer_history, Variable(rnn_out.data)], dim=0)
-        #print(pointer_history)
+        print(pointer_history)
         ###
         # Built-in cross entropy
         # total_loss += len(data) * criterion(output_flat, targets).data[0]
@@ -91,7 +91,7 @@ def evaluate(data_source, batch_size=10, window=args.window):
         # Pointer manual cross entropy
         loss = 0
         softmax_output_flat = torch.nn.functional.softmax(output_flat)
-        for idx, vocab_loss in enumerate(softmax_output_flat):
+        for idx, vocab_loss in enumerate(softmax_output_flat[:4]):
             p = vocab_loss
             if start_idx + idx > window:
                 valid_next_word = next_word_history[start_idx + idx - window:start_idx + idx]
