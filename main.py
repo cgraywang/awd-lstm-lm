@@ -88,10 +88,17 @@ def model_load(fn):
     global model, criterion, optimizer
     with open(fn, 'rb') as f:
         model, criterion, optimizer = torch.load(f)
+        torch.save(model.parameters(), 'WT2.1150.model.pt')
+
+
 
 import os
 import hashlib
+
+args.train = False
+
 fn = 'corpus.{}.data'.format(hashlib.md5(args.data.encode()).hexdigest())
+print(fn)
 if os.path.exists(fn):
     print('Loading cached dataset...')
     corpus = torch.load(fn)
@@ -222,74 +229,81 @@ def train():
         batch += 1
         i += seq_len
 
-# Loop over epochs.
-lr = args.lr
-best_val_loss = []
-stored_loss = 100000000
+if args.train:
 
-# At any point you can hit Ctrl + C to break out of training early.
-try:
-    optimizer = None
-    # Ensure the optimizer is optimizing params, which includes both the model's weights as well as the criterion's weight (i.e. Adaptive Softmax)
-    if args.optimizer == 'sgd':
-        optimizer = torch.optim.SGD(params, lr=args.lr, weight_decay=args.wdecay)
-    if args.optimizer == 'adam':
-        optimizer = torch.optim.Adam(params, lr=args.lr, weight_decay=args.wdecay)
-    for epoch in range(1, args.epochs+1):
-        epoch_start_time = time.time()
-        train()
-        if 't0' in optimizer.param_groups[0]:
-            tmp = {}
-            for prm in model.parameters():
-                tmp[prm] = prm.data.clone()
-                prm.data = optimizer.state[prm]['ax'].clone()
+    # Loop over epochs.
+    lr = args.lr
+    best_val_loss = []
+    stored_loss = 100000000
 
-            val_loss2 = evaluate(val_data)
-            print('-' * 89)
-            print('| end of epoch {:3d} | time: {:5.2f}s | valid loss {:5.2f} | '
-                'valid ppl {:8.2f} | valid bpc {:8.3f}'.format(
-                    epoch, (time.time() - epoch_start_time), val_loss2, math.exp(val_loss2), val_loss2 / math.log(2)))
-            print('-' * 89)
+    # At any point you can hit Ctrl + C to break out of training early.
+    try:
+        optimizer = None
+        # Ensure the optimizer is optimizing params, which includes both the model's weights as well as the criterion's weight (i.e. Adaptive Softmax)
+        if args.optimizer == 'sgd':
+            optimizer = torch.optim.SGD(params, lr=args.lr, weight_decay=args.wdecay)
+        if args.optimizer == 'adam':
+            optimizer = torch.optim.Adam(params, lr=args.lr, weight_decay=args.wdecay)
+        for epoch in range(1, args.epochs+1):
+            epoch_start_time = time.time()
+            train()
+            if 't0' in optimizer.param_groups[0]:
+                tmp = {}
+                for prm in model.parameters():
+                    tmp[prm] = prm.data.clone()
+                    prm.data = optimizer.state[prm]['ax'].clone()
 
-            if val_loss2 < stored_loss:
-                model_save(args.save)
-                print('Saving Averaged!')
-                stored_loss = val_loss2
+                val_loss2 = evaluate(val_data)
+                print('-' * 89)
+                print('| end of epoch {:3d} | time: {:5.2f}s | valid loss {:5.2f} | '
+                    'valid ppl {:8.2f} | valid bpc {:8.3f}'.format(
+                        epoch, (time.time() - epoch_start_time), val_loss2, math.exp(val_loss2), val_loss2 / math.log(2)))
+                print('-' * 89)
 
-            for prm in model.parameters():
-                prm.data = tmp[prm].clone()
+                if val_loss2 < stored_loss:
+                    model_save(args.save)
+                    print('Saving Averaged!')
+                    stored_loss = val_loss2
 
-        else:
-            val_loss = evaluate(val_data, eval_batch_size)
-            print('-' * 89)
-            print('| end of epoch {:3d} | time: {:5.2f}s | valid loss {:5.2f} | '
-                'valid ppl {:8.2f} | valid bpc {:8.3f}'.format(
-              epoch, (time.time() - epoch_start_time), val_loss, math.exp(val_loss), val_loss / math.log(2)))
-            print('-' * 89)
+                for prm in model.parameters():
+                    prm.data = tmp[prm].clone()
 
-            if val_loss < stored_loss:
-                model_save(args.save)
-                print('Saving model (new best validation)')
-                stored_loss = val_loss
+            else:
+                val_loss = evaluate(val_data, eval_batch_size)
+                print('-' * 89)
+                print('| end of epoch {:3d} | time: {:5.2f}s | valid loss {:5.2f} | '
+                    'valid ppl {:8.2f} | valid bpc {:8.3f}'.format(
+                  epoch, (time.time() - epoch_start_time), val_loss, math.exp(val_loss), val_loss / math.log(2)))
+                print('-' * 89)
 
-            if args.optimizer == 'sgd' and 't0' not in optimizer.param_groups[0] and (len(best_val_loss)>args.nonmono and val_loss > min(best_val_loss[:-args.nonmono])):
-                print('Switching to ASGD')
-                optimizer = torch.optim.ASGD(model.parameters(), lr=args.lr, t0=0, lambd=0., weight_decay=args.wdecay)
+                if val_loss < stored_loss:
+                    model_save(args.save)
+                    print('Saving model (new best validation)')
+                    stored_loss = val_loss
 
-            if epoch in args.when:
-                print('Saving model before learning rate decreased')
-                model_save('{}.e{}'.format(args.save, epoch))
-                print('Dividing learning rate by 10')
-                optimizer.param_groups[0]['lr'] /= 10.
+                if args.optimizer == 'sgd' and 't0' not in optimizer.param_groups[0] and (len(best_val_loss)>args.nonmono and val_loss > min(best_val_loss[:-args.nonmono])):
+                    print('Switching to ASGD')
+                    optimizer = torch.optim.ASGD(model.parameters(), lr=args.lr, t0=0, lambd=0., weight_decay=args.wdecay)
 
-            best_val_loss.append(val_loss)
+                if epoch in args.when:
+                    print('Saving model before learning rate decreased')
+                    model_save('{}.e{}'.format(args.save, epoch))
+                    print('Dividing learning rate by 10')
+                    optimizer.param_groups[0]['lr'] /= 10.
 
-except KeyboardInterrupt:
-    print('-' * 89)
-    print('Exiting from training early')
+                best_val_loss.append(val_loss)
+
+    except KeyboardInterrupt:
+        print('-' * 89)
+        print('Exiting from training early')
 
 # Load the best saved model.
 model_load(args.save)
+
+#TODO: reproduce pytorch
+# with open('WT2.1150.pt', 'rb') as f:
+#     model, criterion, optimizer = torch.load(f)
+#     torch.save(model.parameters(), 'WT2.1150.model.pt')
 
 # Run on test data.
 test_loss = evaluate(test_data, test_batch_size)
