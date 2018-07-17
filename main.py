@@ -88,8 +88,8 @@ def model_load(fn):
     global model, criterion, optimizer
     with open(fn, 'rb') as f:
         model, criterion, optimizer = torch.load(f)
-        print('type(model)')
-        type(model)
+        print(model)
+        print(model.parameters())
         torch.save(model.parameters(), 'WT2.1150.model.pt')
 
 
