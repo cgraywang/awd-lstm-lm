@@ -88,10 +88,12 @@ def model_load(fn):
     global model, criterion, optimizer
     with open(fn, 'rb') as f:
         model, criterion, optimizer = torch.load(f)
-        print(model)
-        print(model.parameters())
-        torch.save(model.parameters(), 'WT2.1150.model.pt')
+        model_save_param('WT2.1150.model.pt', model)
 
+def model_save_param(fn, model):
+    for name, param in model.named_parameters():
+        with open(fn + '.' + name, 'wb') as f:
+            torch.save(param, f)
 
 
 import os
