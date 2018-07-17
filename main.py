@@ -88,6 +88,8 @@ def model_load(fn):
     global model, criterion, optimizer
     with open(fn, 'rb') as f:
         model, criterion, optimizer = torch.load(f)
+        print('type(model)')
+        type(model)
         torch.save(model.parameters(), 'WT2.1150.model.pt')
 
 
@@ -299,7 +301,6 @@ if args.train:
 
 # Load the best saved model.
 model_load(args.save)
-
 print('model parameters saved successfully!')
 
 #TODO: reproduce pytorch
