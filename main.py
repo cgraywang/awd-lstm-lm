@@ -300,6 +300,8 @@ if args.train:
 # Load the best saved model.
 model_load(args.save)
 
+print('model parameters saved successfully!')
+
 #TODO: reproduce pytorch
 # with open('WT2.1150.pt', 'rb') as f:
 #     model, criterion, optimizer = torch.load(f)
