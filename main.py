@@ -240,6 +240,8 @@ try:
         train()
         if 't0' in optimizer.param_groups[0]:
             tmp = {}
+            print('optimizer.param_groups[0]')
+            print(optimizer.param_groups[0])
             for prm in model.parameters():
                 tmp[prm] = prm.data.clone()
                 prm.data = optimizer.state[prm]['ax'].clone()
